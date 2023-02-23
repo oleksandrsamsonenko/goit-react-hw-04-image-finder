@@ -1,33 +1,24 @@
-import { Component } from 'react';
+import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import css from './Modal.module.css';
 
-export class Modal extends Component {
-  componentDidMount() {
-    document.addEventListener(`keydown`, this.handleClose);
-  }
+export const Modal = ({ link, tags, hide }) => {
+  useEffect(() => {
+    document.addEventListener(`keydown`, handleClose);
+    return () => document.removeEventListener(`keydown`, handleClose);
+  });
 
-  componentWillUnmount() {
-    document.removeEventListener(`keydown`, this.handleClose);
-  }
-
-  handleClose = event => {
+  const handleClose = event => {
     if (event.code === 'Escape' || event.target === event.currentTarget) {
-      this.props.hide();
+      hide();
     }
   };
-  render() {
-    return (
-      <div className={css.backdrop} onClick={this.handleClose}>
-        <img
-          className={css.modal}
-          src={this.props.link}
-          alt={this.props.tags}
-        />
-      </div>
-    );
-  }
-}
+  return (
+    <div className={css.backdrop} onClick={handleClose}>
+      <img className={css.modal} src={link} alt={tags} />
+    </div>
+  );
+};
 
 Modal.propTypes = {
   link: PropTypes.string.isRequired,

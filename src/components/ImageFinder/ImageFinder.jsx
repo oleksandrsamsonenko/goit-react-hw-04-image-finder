@@ -1,49 +1,45 @@
 import { Searchbar } from 'components/SearchBar/SearchBar';
-import { Component } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ImageGallery } from 'components/ImageGallery/ImageGallery';
 import { Button } from 'components/Button/Button';
 import { Loader } from 'components/Loader/Loader';
 import { Modal } from 'components/Modal/Modal';
-
 import { searchImages } from 'api/api';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-export class ImageFinder extends Component {
-  state = {
-    search: '',
-    images: [],
-    page: 1,
-    status: 'idle',
-    modal: false,
-    imageLink: null,
-    imageTags: null,
-    totalHits: null,
-  };
+export const ImageFinder = () => {
+  const [images, setImages] = useState([]);
+  const [status, setStatus] = useState('idle');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [modal, setModal] = useState(false);
+  const [imageLink, setImageLink] = useState(null);
+  const [imageTags, setImageTags] = useState(null);
+  const [totalHits, setTotalHits] = useState(null);
+  const [error, setError] = useState(null);
 
-  componentDidUpdate(_, prevState) {
-    if (prevState.search !== this.state.search) {
-      this.getResponse();
+  const firstRender = useRef(true);
+  const secondRender = useRef(true);
+  const notify = () =>
+    toast.info('Search field must contain something to show results!', {
+      position: toast.POSITION.TOP_CENTER,
+    });
+
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
       return;
     }
-    if (prevState.page !== this.state.page) {
-      this.getResponse();
+    if (secondRender.current) {
+      secondRender.current = false; // O_O
+      return;
     }
-  }
+    async function getResponse() {
+      try {
+        setStatus('pending');
 
-  addNewSearchValue = value => {
-    if (value.trim() !== this.state.search && value.trim() !== '') {
-      this.setState({ search: value, images: [], page: 1 });
-    }
-    if (value.trim() === '') {
-      alert(`Search field must contain something to show results`);
-    }
-  };
-
-  async getResponse() {
-    try {
-      this.setState({ status: 'pending' });
-
-      const response = await searchImages(this.state.search, this.state.page);
-      this.setState(prevState => {
+        const response = await searchImages(search, page);
         const newImages = response.data.hits.map(
           ({ id, previewURL, webformatURL, tags }) => {
             return {
@@ -54,60 +50,63 @@ export class ImageFinder extends Component {
             };
           }
         );
-
-        return {
-          images: [...prevState.images, ...newImages],
-          status: 'resolved',
-          totalHits: response.data.totalHits,
-        };
-      });
-    } catch (error) {
-      this.setState({
-        status: 'rejected',
-        error: error.message || 'Sorry, something gone wrong!',
-      });
-      console.log(error.message);
+        console.log(newImages);
+        setImages(prevState => [...prevState, ...newImages]);
+        setStatus('resolved');
+        setTotalHits(response.data.totalHits);
+        return;
+      } catch (error) {
+        setStatus(`rejected`);
+        setError(error.message || 'Sorry, something gone wrong!');
+      }
     }
-  }
+    console.log(`updated`);
+    console.log(search);
+    getResponse();
+  }, [search, page]);
 
-  setCurrentPage = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
+  const addNewSearchValue = value => {
+    if (value.trim() !== search && value.trim() !== '') {
+      setSearch(value);
+      setImages([]);
+      setPage(1);
+    }
+    if (value.trim() === '') {
+      notify();
+    }
   };
 
-  showModal = (url, tags) => {
-    this.setState({ modal: true, imageLink: url, tags: tags });
+  const showModal = (url, tags) => {
+    setModal(true);
+    setImageLink(url);
+    setImageTags(tags);
   };
 
-  hideModal = () => {
-    this.setState({ modal: false, imageLink: null });
+  const hideModal = () => {
+    setModal(false);
+    setImageLink(null);
   };
 
-  render() {
-    const { images, status, totalHits, modal } = this.state;
-    return (
-      <>
-        <Searchbar onSubmit={this.addNewSearchValue} />
-        {images.length !== 0 && (
-          <ImageGallery data={images} showModal={this.showModal} />
-        )}
-        {status === 'resolved' &&
-          images.length > 0 &&
-          totalHits !== images.length && (
-            <Button setPage={this.setCurrentPage} />
-          )}
-        {status === 'resolved' && images.length === 0 && (
-          <p>No images matching your search criteria were found</p>
-        )}
-        {status === 'pending' && <Loader />}
-        {modal && (
-          <Modal
-            link={this.state.imageLink}
-            tags={this.state.tags}
-            hide={this.hideModal}
-          />
-        )}
-        {status === 'rejected' && <p>{this.state.error}</p>}
-      </>
-    );
-  }
-}
+  const setCurrentPage = () => {
+    setPage(prevState => prevState + 1);
+  };
+
+  return (
+    <>
+      <Searchbar onSubmit={addNewSearchValue} />
+      {images.length !== 0 && (
+        <ImageGallery data={images} showModal={showModal} />
+      )}
+      {status === 'resolved' &&
+        images.length > 0 &&
+        totalHits !== images.length && <Button setPage={setCurrentPage} />}
+      {status === 'resolved' && images.length === 0 && (
+        <p>No images matching your search criteria were found</p>
+      )}
+      {status === 'pending' && <Loader />}
+      {modal && <Modal link={imageLink} tags={imageTags} hide={hideModal} />}
+      {status === 'rejected' && <p>{error}</p>}
+      <ToastContainer />
+    </>
+  );
+};
