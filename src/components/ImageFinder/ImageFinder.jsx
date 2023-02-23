@@ -22,8 +22,11 @@ export const ImageFinder = () => {
   const firstRender = useRef(true);
   const secondRender = useRef(true);
   const notify = () =>
-    toast.info('Search field must contain something to show results!', {
+    toast.warn('Search field must contain something to show results!', {
       position: toast.POSITION.TOP_CENTER,
+      theme: 'colored',
+      autoClose: 2500,
+      pauseOnHover: false,
     });
 
   useEffect(() => {
