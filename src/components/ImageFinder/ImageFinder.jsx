@@ -20,7 +20,7 @@ export const ImageFinder = () => {
   const [error, setError] = useState(null);
 
   const firstRender = useRef(true);
-  const secondRender = useRef(true);
+  // const secondRender = useRef(true);
   const notify = () =>
     toast.warn('Search field must contain something to show results!', {
       position: toast.POSITION.TOP_CENTER,
@@ -34,10 +34,10 @@ export const ImageFinder = () => {
       firstRender.current = false;
       return;
     }
-    if (secondRender.current) {
-      secondRender.current = false; // O_O
-      return;
-    }
+    // if (secondRender.current) {
+    //   secondRender.current = false; // O_O
+    //   return;
+    // }
     async function getResponse() {
       try {
         setStatus('pending');
