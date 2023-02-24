@@ -1,5 +1,5 @@
 import { Searchbar } from 'components/SearchBar/SearchBar';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { ImageGallery } from 'components/ImageGallery/ImageGallery';
 import { Button } from 'components/Button/Button';
 import { Loader } from 'components/Loader/Loader';
@@ -19,8 +19,6 @@ export const ImageFinder = () => {
   const [totalHits, setTotalHits] = useState(null);
   const [error, setError] = useState(null);
 
-  const firstRender = useRef(true);
-  // const secondRender = useRef(true);
   const notify = () =>
     toast.warn('Search field must contain something to show results!', {
       position: toast.POSITION.TOP_CENTER,
@@ -30,14 +28,6 @@ export const ImageFinder = () => {
     });
 
   useEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false;
-      return;
-    }
-    // if (secondRender.current) {
-    //   secondRender.current = false; // O_O
-    //   return;
-    // }
     async function getResponse() {
       try {
         setStatus('pending');
@@ -53,7 +43,6 @@ export const ImageFinder = () => {
             };
           }
         );
-        console.log(newImages);
         setImages(prevState => [...prevState, ...newImages]);
         setStatus('resolved');
         setTotalHits(response.data.totalHits);
@@ -63,14 +52,15 @@ export const ImageFinder = () => {
         setError(error.message || 'Sorry, something gone wrong!');
       }
     }
-    console.log(`updated`);
-    console.log(search);
-    getResponse();
+
+    if (search) {
+      getResponse();
+    }
   }, [search, page]);
 
   const addNewSearchValue = value => {
     if (value.trim() !== search && value.trim() !== '') {
-      setSearch(value);
+      setSearch(value.trim());
       setImages([]);
       setPage(1);
     }
